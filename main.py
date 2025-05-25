@@ -21,8 +21,8 @@ def floyd_warshall_sequential(D):
     dist = D.copy()
     start_time = time.time()
     for k in range(n):
-        for i in range(n):
-            for j in range(n):
+        for j in range(n):
+            for i in range(n):
                 if dist[i, j] > dist[i, k] + dist[k, j]:
                     dist[i, j] = dist[i, k] + dist[k, j]
     total_time = time.time() - start_time
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     graph = generate_symmetric_graph(n)
     np.save(os.path.join(output_dir, "input_graph.npy"), graph)
 
-    print("\nRunning sequential Floyd-Warshall algorithm...")
+    print("\nRunning sequential Floyd-Warshall algorithm...")    
     seq_dist, seq_time = floyd_warshall_sequential(graph)
     np.save(os.path.join(output_dir, "sequential_result.npy"), seq_dist)
     sequential_result = np.load(os.path.join(
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     parallel_stats = {}
 
     print("\nRunning parallel Floyd-Warshall algorithm with different number of processes...")
-    for num_processes in range(2, max_processes + 1):
+    for num_processes in range(1, max_processes + 1):
         mean_time, stderr = run_parallel_version(
             n, output_dir, num_processes, sequential_result, num_repeats)
         if mean_time is not None:
@@ -123,7 +123,8 @@ if __name__ == "__main__":
         writer.writerow(["numprocs", "mean_time (s)", "stderr (s)"])
 
         # Add sequential as 1 proc
-        writer.writerow([1, f"{seq_time:.4f}", "0.0000"])
+        mean_time, stderr = parallel_stats[1]
+        writer.writerow([1, mean_time, stderr])
 
         # Add parallel runs
         for num_procs in sorted(parallel_stats.keys()):

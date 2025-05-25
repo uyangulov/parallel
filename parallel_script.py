@@ -14,6 +14,8 @@ def floyd_warshall_parallel(n, output_dir):
         D = np.load(os.path.join(output_dir, "input_graph.npy"))
     else:
         D = np.empty((n, n), dtype=np.float64)
+        
+    start_time = time.time()
 
     comm.Bcast(D, root=0)
 
@@ -25,7 +27,6 @@ def floyd_warshall_parallel(n, output_dir):
     local_D = D[start_row:end_row, :].copy()
 
     comm.Barrier()
-    start_time = time.time()
 
     for k in range(n):
         owner_rank = -1
@@ -51,7 +52,6 @@ def floyd_warshall_parallel(n, output_dir):
                     local_D[i, j] = local_D[i, k] + row_k[j]
 
     comm.Barrier()
-    total_time = time.time() - start_time
 
     counts = [(rows_per_proc + (1 if i < extra else 0)) * n for i in range(size)]
     displs = [sum(counts[:i]) for i in range(size)]
@@ -62,6 +62,7 @@ def floyd_warshall_parallel(n, output_dir):
         final_D = None
 
     comm.Gatherv(local_D.flatten(), (final_D, counts, displs, MPI.DOUBLE), root=0)
+    total_time = time.time() - start_time
 
     if rank == 0:
         np.save(os.path.join(output_dir, f"parallel_result_{size}.npy"), final_D)
